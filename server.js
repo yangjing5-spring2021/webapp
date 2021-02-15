@@ -1,11 +1,16 @@
 'use strict';
 
 const express = require('express');
+const bodyParser = require('body-parser');
+const AWS = require('aws-sdk');
 
 const app = express();
 const PORT = 3000;
+app.use(bodyParser.json());
 
 const userData = require('./userData');
+const booksRoute = require('./routes/books-route');
+app.use('/books', booksRoute);
 
 app.post('/v1/user', express.json(), (req, res) => {
     const newUser = req.body;
@@ -32,17 +37,14 @@ app.put('/v1/user/self', express.json(), (req, res) => {
 
 app.get('/v1/user/self', (req, res) => {
     const authorization = req.headers.authorization;
-    userData.getUser(authorization)
+    userData.authenticateUser(authorization)
         .then((authResult) => {
-            if (authResult.auth) {
                 delete authResult.userInfo.password;
                 res.status(200).json(authResult.userInfo);
-            } else {
-                res.status(400).json({ error: "Password is invalid"});
-            }
         }).catch((err) => {
             res.status(400).json({ error: err});
         })
 })
+
 
 app.listen(PORT, () => console.log(`http://localhost:${PORT}`));
