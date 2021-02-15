@@ -1,26 +1,29 @@
 'use strict';
 
-const dbConfig = require('./dbConfig.js'); // connection variable
+const sequelize = require('./dbConfig.js'); // connection variable
 const Sequelize = require('sequelize');
-const sequelize = new Sequelize(dbConfig.database, dbConfig.user, dbConfig.password, {
-    host: dbConfig.host,
-    dialect: 'mysql',
-    pool: {
-        max: 5,
-        min: 0,
-        idle: 30000
-    }
-});
 
 const User = sequelize.define('user', {
     id: {
         type: Sequelize.STRING(64),
         primaryKey: true
     },
-    first_name: Sequelize.STRING(64),
-    last_name: Sequelize.STRING(64),
-    password: Sequelize.STRING(64),
-    username: Sequelize.STRING(64),
+    first_name: {
+        type: Sequelize.STRING(64),
+        allowNull: false
+    },
+    last_name:  {
+        type: Sequelize.STRING(64),
+        allowNull: false
+    },
+    password:  {
+        type: Sequelize.STRING(64),
+        allowNull: false
+    },
+    username:  {
+        type: Sequelize.STRING(64),
+        allowNull: false
+    },
     account_created: Sequelize.DATE,
     account_updated: Sequelize.DATE
 }, {
@@ -227,7 +230,7 @@ async function saveDB(user, userUpdate, hash) {
     });
 }
 
-async function getUser(authorization) {
+async function authenticateUser(authorization) {
     const userPass = authorization.split(' ')[1];
     const plaintext = Buffer.from(userPass, 'base64').toString('ascii');
     
@@ -247,9 +250,13 @@ async function getUser(authorization) {
 
     await bcryptCompare(password, userInfo)
         .then((match) => {
-                result.auth = match;
+            result.auth = match;
         });
     result.userInfo = userInfo;
+    if (!result.auth) {
+        console.log("false");
+        return Promise.reject("Login invalid");
+    }
     return Promise.resolve(result);
 }
 
@@ -275,7 +282,7 @@ async function checkInfo(username) {
 const userData = {
     createUser,
     updateUser,
-    getUser,
+    authenticateUser,
     checkPassword
 };
 
