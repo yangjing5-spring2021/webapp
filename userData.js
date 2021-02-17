@@ -1,35 +1,5 @@
 'use strict';
-
-const sequelize = require('./dbConfig.js'); // connection variable
-const Sequelize = require('sequelize');
-
-const User = sequelize.define('user', {
-    id: {
-        type: Sequelize.STRING(64),
-        primaryKey: true
-    },
-    first_name: {
-        type: Sequelize.STRING(64),
-        allowNull: false
-    },
-    last_name:  {
-        type: Sequelize.STRING(64),
-        allowNull: false
-    },
-    password:  {
-        type: Sequelize.STRING(64),
-        allowNull: false
-    },
-    username:  {
-        type: Sequelize.STRING(64),
-        allowNull: false
-    },
-    account_created: Sequelize.DATE,
-    account_updated: Sequelize.DATE
-}, {
-        timestamps: false
-});
-User.sync({ force: false });
+const User = require('./models/user');
 
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
