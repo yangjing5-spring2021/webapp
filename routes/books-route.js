@@ -51,10 +51,29 @@ router.post('/', function (req, res) {
 });
 
 router.get('/:id', function(req, res) {
+    const bookId = req.params.id;
+    Book.findOne({
+        where: {
+            id: bookId
+        }
+    }).then((data) => {
+        if (data) {
+            data = data.get({ plain: true });
+            res.status(200).json(data);
+        } else {
+            res.status(200).json(data);
+        }
+    }).catch((err) => {
+        res.status(500).json({error : err});
+    }); 
+})
+
+router.delete('/:id', function(req, res) {
     const authorization = req.headers.authorization;
     const bookId = req.params.id;
     userData.authenticateUser(authorization)
-        .then(() => {
+        .then((authResult) => {
+            const userId = authResult.userInfo.id;
             Book.findOne({
                 where: {
                     id: bookId
@@ -62,58 +81,42 @@ router.get('/:id', function(req, res) {
             }).then((data) => {
                 if (data) {
                     data = data.get({ plain: true });
-                    res.status(200).json(data);
-                } else {
-                    res.status(200).json(data);
-                }
-            }).catch((err) => {
-                res.status(500).json({error : err});
-            }); 
-    }).catch((err) => {
-        res.status(401).json({error : err});
-    })
-})
-
-router.delete('/:id', function(req, res) {
-    const authorization = req.headers.authorization;
-    const bookId = req.params.id;
-    userData.authenticateUser(authorization)
-        .then(() => {
-            Book.destroy({
-                where: {
-                    id: bookId
-                }
-            }).then((data) => {
-                if (data) {
-                    res.status(204).json({});
+                    console.log(data);
+                    console.log(userId);
+                    if (data.user_id === userId) {
+                        Book.destroy({
+                            where: {
+                                id: bookId
+                            }
+                        }).then((data) => {
+                            if (data) {
+                                res.status(204).json({});
+                            } 
+                        }).catch((err) => {
+                            res.status(500).json({error : err});
+                        }); 
+                    } else {
+                        console.log("401");
+                        res.status(401).json({});
+                    }
                 } else {
                     res.status(404).json({});
                 }
             }).catch((err) => {
-                res.status(500).json({error : err});
-            }); 
+                    res.status(500).json({error : err});
+            });
     }).catch((err) => {
         res.status(401).json({error : err});
     })
 })
 
 router.get('/', function(req, res) {
-    const authorization = req.headers.authorization;
-    userData.authenticateUser(authorization)
-        .then((authResult) => {
-            console.log(authResult.userInfo.id);
-            Book.findAll({
-                where: {
-                    user_id: authResult.userInfo.id
-                }
-            }).then((data) => {
-                res.status(200).json(data);
-            }).catch((err) => {
-                res.status(500).json({error : err});
-            }); 
+    Book.findAll({})
+    .then((data) => {
+        res.status(200).json(data);
     }).catch((err) => {
-        res.status(401).json({error : err});
-    })
+        res.status(500).json({error : err});
+    }); 
 })
 
 module.exports = router;
