@@ -1,12 +1,11 @@
 'use strict';
-const User = require('./models/user');
+const models = require('../models/models');
 
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 
 async function createUser(newUser) {
     let errors;
-
     // To check if provide all the required info
     errors = checkCreateReq(newUser);
     if (errors) {
@@ -55,7 +54,7 @@ async function bcryptStore(newUser) {
 async function storeUser(newUser) {
     const { v4: uuidv4 } = require('uuid');
     const uid = uuidv4();
-    const addUser = await User.create({
+    const addUser = await models.User.create({
         id: uid,
         first_name: newUser.first_name,
         last_name: newUser.last_name,
@@ -117,7 +116,7 @@ function checkPassword(password) {
 }
 
 async function ifUsernameExist(username) {
-    const user = await User.findOne({
+    const user = await models.User.findOne({
         where: {
             username: username
         }
@@ -181,7 +180,7 @@ async function updateUser(authorization, userUpdate) {
 }
 
 async function updateDB(username, userUpdate, hash) {
-    await User.findOne({
+    await models.User.findOne({
         where: {
             username: username
         }
@@ -224,7 +223,6 @@ async function authenticateUser(authorization) {
         });
     result.userInfo = userInfo;
     if (!result.auth) {
-        console.log("false");
         return Promise.reject("Login invalid");
     }
     return Promise.resolve(result);
@@ -236,7 +234,7 @@ async function bcryptCompare(password, userInfo) {
 }
 
 async function checkInfo(username) {
-    const userInfo = await User.findOne({
+    const userInfo = await models.User.findOne({
         where: {
             username: username
         }
