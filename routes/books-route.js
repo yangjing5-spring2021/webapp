@@ -2,17 +2,9 @@
 const router = require('express').Router();
 const models = require('../models/models');
 const userData = require('./userData');
-const AWS = require('aws-sdk');
+const updateImage = require('../services/updateImage');
 const environment = require('dotenv');
 environment.config();
-
-/*
-const ID = process.env.;
-const SECRET = process.env.;
-const s3 = new AWS.S3({
-    accessKeyId: ID,
-    secretAccessKey: SECRET
-});*/
 
 router.post('/', function (req, res) {
     const authorization = req.headers.authorization;
@@ -115,8 +107,9 @@ router.post('/:book_id/image', function (req, res) {
     const authorization = req.headers.authorization;
     const book_id = req.params.book_id;
     const image_string = req.body;
+    // req.files.uploadedFileName.data;
     // const json_response = { file_name: "image.jpg", s3_object_name: "ad79de23-6820-482c-8d2b-d513885b0e17/9afdf82d-7e8e-4491-90d3-ff0499bf6afe/image.jpg", file_id: "9afdf82d-7e8e-4491-90d3-ff0499bf6afe", created_date: new Date(), user_id: "d290f1ee-6c54-4b01-90e6-d701748f0851" };
-
+    console.log("req.file: " + req.file);
     userData.authenticateUser(authorization)
         .then((authResult) => {
             if (image_string) {
@@ -132,7 +125,8 @@ router.post('/:book_id/image', function (req, res) {
                     created_date: new Date(),
                     user_id: authResult.userInfo.id
                 }).then(async (addedFile) => {
-                    //upload()
+                    await updateImage.uploadS3Image(image_string, s3_object_name);
+                    // upload successfully
                     await updateBookImages(book_id, addedFile)
                     res.status(201).json(addedFile);
                 }).catch((err) => {
@@ -145,29 +139,9 @@ router.post('/:book_id/image', function (req, res) {
             res.status(401).json({error : err});
         })   
 });
-/*
-function upload(image_string, s3_object_name) {
-    const s3 = new AWS.S3({
-        accessKeyId: ID,
-        secretAccessKey: SECRET
-    });
 
-    const bucketName = "webapp.jing.yang";
-    const params = {
-        Bucket: bucketName,
-        Key: s3_object_name,
-        Body: image_string
-    };
-    
-    s3.upload(params, function(err, data){
-        if (err) {
-            console.log("File upload failed with error " + err);
-            throw err;
-        }
-        console.log("File uploaded successfully");
-    });
-}
-*/
+
+
 router.delete('/:book_id/image/:image_id', function(req, res) {
     const authorization = req.headers.authorization;
     const book_id = req.params.book_id;
@@ -182,6 +156,7 @@ router.delete('/:book_id/image/:image_id', function(req, res) {
             }).then((data) => {
                 if (data) {
                     data = data.get({ plain: true });
+                    const deleted_s3_object_name = data.s3_object_name;
                     if (data.user_id === userId) {
                         models.File.destroy({
                             where: {
@@ -189,8 +164,9 @@ router.delete('/:book_id/image/:image_id', function(req, res) {
                             }
                         }).then((data) => {
                             deleteBookImages(book_id, image_id)
-                                    .then(() => {
+                                    .then(async () => {
                                         if (data) {
+                                            await updateImage.deleteS3Image(deleted_s3_object_name);
                                             // delete succesfully
                                             res.status(204).json({});
                                         } 
