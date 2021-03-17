@@ -4,6 +4,10 @@
 
 .env
 
+.tmp
+
+env.sh
+
 package-lock.json
 
 npm-debug.log
