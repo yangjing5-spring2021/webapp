@@ -1,7 +1,7 @@
 "use strict";
 
 const { expect } = require('chai');
-const { checkPassword } = require('../userData');
+const { checkPassword } = require('../routes/userData');
 
 describe('Check Password Test', () => {
     it('should return error1', () => {

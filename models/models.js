@@ -91,7 +91,15 @@ const File = sequelize.define('file', {
     user_id: {
         type: Sequelize.STRING(64),
         allowNull: false
-    }
+    },
+    /*encoding: {
+        type: Sequelize.STRING(64),
+        allowNull: false
+    },
+    mimetype: {
+        type: Sequelize.STRING(64),
+        allowNull: false
+    },*/
 },
 { 
     timestamps: false,
