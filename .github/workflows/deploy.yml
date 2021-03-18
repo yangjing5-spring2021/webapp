@@ -1,16 +1,18 @@
-name: webapp CI
+name: Deploy CI
 
 on:
-  workflow_dispatch: 
-  push:
-    branches: [ main ]
+  pull_request:
+    types: [ closed ]
+    branches:
+      - 'main'
 
 env:
-  artifact_name: webapp.tar
-  s3_bucket_name: webapp.jing.yang
+  artifact_name: webapp-${{ github.sha }}.tar
+  s3_bucket_name: codedeploy.jing.yang.prod
 
 jobs:
   build:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -24,16 +26,20 @@ jobs:
 
     - name: upload to s3
       run: |
+        pwd
         mkdir webapp_s3
         cp ./*.js webapp_s3
+        cp ./README.md webapp_s3
+        cp ./package.json webapp_s3
         cp -r ./models webapp_s3
         cp -r ./routes webapp_s3
         cp -r ./services webapp_s3
-        echo "tar webapp.tar start"
-        tar -cvf webapp.tar webapp_s3
-        echo "tar webapp.tar complete"
+        ls -alR
+        echo "tar ${{ env.artifact_name }} start"
+        tar -cvf ${{ env.artifact_name }} webapp_s3
+        echo "tar ${{ env.artifact_name }} complete"
         echo "aws s3 upload start"
-        aws s3 cp webapp.tar s3://${s3_bucket_name}
+        aws s3 sync ${{ env.artifact_name }} s3://${{ env.s3_bucket_name }}
         echo "aws s3 upload complete"
 
     - name: deploy
@@ -42,8 +48,8 @@ jobs:
           --application-name webapp \
           --deployment-config-name CodeDeployDefault.AllAtOnce \
           --deployment-group-name webapp-group \
-          --description "CodeDeploy" \
-          --s3-location bucket=${{ secrets.S3_BUCKET_NAME }},key=webapp.tar,bundleType=tar \
+          --description "CSYE6225 - CodeDeploy" \
+          --s3-location bucket=${s3_bucket_name},key=webapp.tar,bundleType=tar \
           --region us-east-1 \
           --output json)
           echo $output
