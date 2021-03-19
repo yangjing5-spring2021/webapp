@@ -27,18 +27,10 @@ jobs:
     - name: upload to s3
       run: |
         pwd
-        mkdir webapp
-        cd webapp
-        cp ../*.json .
-        cp ../*.md .
-        cp ../*.js .
-        cp -r ../models .
-        cp -r ../routes .
-        cp -r ../services .
-        cp -r ../test .
-        cp -r ../.github .
-        cd ..
+        cp appspec.yml /home/ubuntu
+        cp -r codedeploy /home/ubuntu
         mkdir codedeploy_artifact
+        cd ..
         zip -r ${{ env.artifact_name }} webapp appspec.yml codedeploy
         pwd
         ls -al
