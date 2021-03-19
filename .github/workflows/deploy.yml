@@ -36,7 +36,7 @@ jobs:
         cp -r ../routes .
         cp -r ../services .
         cp -r ../test .
-        cp -r ../.github/workflows .
+        cp -r ../.github .
         cd ..
         mkdir codedeploy_artifact
         zip -r ${{ env.artifact_name }} webapp appspec.yml codedeploy
