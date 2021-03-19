@@ -7,7 +7,7 @@ on:
       - 'main'
 
 env:
-  artifact_name: webapp-${{ github.sha }}.tar
+  artifact_name: webapp-${{ github.sha }}.zip
   s3_bucket_name: codedeploy.jing.yang.prod
 
 jobs:
@@ -60,7 +60,7 @@ jobs:
           --deployment-config-name CodeDeployDefault.AllAtOnce \
           --deployment-group-name csye6225-webapp-deployment \
           --description "CSYE6225 CodeDeploy" \
-          --s3-location bucket=${{ env.s3_bucket_name }},key=${{ env.artifact_name }},bundleType=tar \
+          --s3-location bucket=${{ env.s3_bucket_name }},key=${{ env.artifact_name }},bundleType=zip \
           --region us-east-1 \
           --output json)
           echo $output
