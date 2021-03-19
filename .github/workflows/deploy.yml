@@ -41,8 +41,13 @@ jobs:
         pwd
         ls -al
         mv ${{ env.artifact_name }} codedeploy_artifact/
+        pwd
+        cd codedeploy_artifact
+        pwd
+        ls -al
+        cd ..
         echo "aws s3 upload start"
-        aws s3 sync codedeploy_artifact/ s3://${{ env.s3_bucket_name }}
+        aws s3 sync ./codedeploy_artifact s3://${{ env.s3_bucket_name }}
         echo "aws s3 upload complete"
 
     - name: deploy
