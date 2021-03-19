@@ -34,10 +34,11 @@ jobs:
         cp -r ./models webapp_s3
         cp -r ./routes webapp_s3
         cp -r ./services webapp_s3
-        ls -alR
+        ls -al
         echo "tar ${{ env.artifact_name }} start"
         tar -cvf ${{ env.artifact_name }} webapp_s3
         echo "tar ${{ env.artifact_name }} complete"
+        mkdir codedeploy_artifact
         pwd
         ls -al
         mv ${{ env.artifact_name }} codedeploy_artifact/
