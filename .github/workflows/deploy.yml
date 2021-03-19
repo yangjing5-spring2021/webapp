@@ -39,18 +39,19 @@ jobs:
         tar -cvf ${{ env.artifact_name }} webapp_s3
         echo "tar ${{ env.artifact_name }} complete"
         pwd
-        ls -alR
+        ls -al
+        mv ${{ env.artifact_name }} codedeploy_artifact/
         echo "aws s3 upload start"
-        aws s3 sync ${{ env.artifact_name }} s3://${{ env.s3_bucket_name }}
+        aws s3 sync codedeploy_artifact/ s3://${{ env.s3_bucket_name }}
         echo "aws s3 upload complete"
 
     - name: deploy
       run: |
           output=$(aws deploy create-deployment \
-          --application-name webapp \
+          --application-name csye6225-webapp \
           --deployment-config-name CodeDeployDefault.AllAtOnce \
-          --deployment-group-name webapp-group \
-          --description "CSYE6225 - CodeDeploy" \
+          --deployment-group-name csye6225-webapp-deployment \
+          --description "CSYE6225 CodeDeploy" \
           --s3-location bucket=${{ env.s3_bucket_name }},key=webapp.tar,bundleType=tar \
           --region us-east-1 \
           --output json)
