@@ -1,6 +1,6 @@
 const AWS = require('aws-sdk');
 AWS.config.update({region: 'us-east-1'});
-let s3;
+let s3 = {};
 
 const multer = require("multer");
 const multerS3 = require("multer-s3");
