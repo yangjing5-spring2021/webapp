@@ -1,8 +1,8 @@
 version: 0.0
 os: linux
 files:
-  - source: /
-    destination: /home/ubuntu
+  - source: ./webapp
+    destination: /home/ubuntu/webapp
 hooks:
   ApplicationStop:
    - location: codedeploy/applicationStop.sh
