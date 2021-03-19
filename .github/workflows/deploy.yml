@@ -27,22 +27,24 @@ jobs:
     - name: upload to s3
       run: |
         pwd
-        mkdir webapp_s3
-        cp ./*.js webapp_s3
-        cp ./README.md webapp_s3
-        cp ./package.json webapp_s3
-        cp -r ./models webapp_s3
-        cp -r ./routes webapp_s3
-        cp -r ./services webapp_s3
-        ls -al
-        echo "tar ${{ env.artifact_name }} start"
-        tar -cvf ${{ env.artifact_name }} webapp_s3
-        echo "tar ${{ env.artifact_name }} complete"
+        mkdir webapp
         mkdir codedeploy_artifact
+        cd webapp
+        cp ../*.json .
+        cp ../*.md .
+        cp ../*.js .
+        cp -r ../models .
+        cp -r ../routes .
+        cp -r ../services .
+        cp -r ../test .
+        cp -r ../.github/workflows .
+        cd ..
+        zip -r ${{ env.artifact_name }} webapp appspec.yml codeDeploy
         pwd
         ls -al
         mv ${{ env.artifact_name }} codedeploy_artifact/
         pwd
+        ls -al
         cd codedeploy_artifact
         pwd
         ls -al
