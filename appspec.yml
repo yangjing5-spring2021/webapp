@@ -5,18 +5,18 @@ files:
     destination: /home/ubuntu/webapp
 hooks:
   ApplicationStop:
-   - location: codedeploy/applicationStop.sh
+   - location: ./codedeploy/applicationStop.sh
      timeout: 180
      runas: ubuntu
   BeforeInstall:
-   - location: codedeploy/beforeInstall.sh
+   - location: ./codedeploy/beforeInstall.sh
      timeout: 180
      runas: ubuntu
   AfterInstall:
-   - location: codedeploy/afterInstall.sh
+   - location: ./codedeploy/afterInstall.sh
      timeout: 180
      runas: ubuntu
   ApplicationStart:
-   - location: codedeploy/applicationStart.sh
+   - location: ./codedeploy/applicationStart.sh
      runas: ubuntu
      timeout: 180
