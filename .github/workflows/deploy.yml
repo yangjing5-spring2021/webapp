@@ -58,7 +58,7 @@ jobs:
           --deployment-config-name CodeDeployDefault.AllAtOnce \
           --deployment-group-name csye6225-webapp-deployment \
           --description "CSYE6225 CodeDeploy" \
-          --s3-location bucket=${{ env.s3_bucket_name }},key=webapp.tar,bundleType=tar \
+          --s3-location bucket=${{ env.s3_bucket_name }},key=${{ env.artifact_name }},bundleType=tar \
           --region us-east-1 \
           --output json)
           echo $output
