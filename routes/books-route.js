@@ -2,7 +2,7 @@
 const router = require('express').Router();
 const models = require('../models/models');
 const userData = require('./userData');
-const updateImage = require('../services/updateImage');
+//const updateImage = require('../services/updateImage');
 const environment = require('dotenv');
 //const path = require('path');
 //dotenv.config({ path: path.resolve(__dirname, './.env') });
