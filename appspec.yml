@@ -5,7 +5,7 @@ files:
     destination: /home/ubuntu
 hooks:
   ApplicationStop:
-   - location: ./codeDeploy/applicationStop.sh
+   - location: ./codedeploy/applicationStop.sh
      timeout: 180
      runas: ubuntu
   BeforeInstall:
@@ -13,10 +13,10 @@ hooks:
      timeout: 180
      runas: ubuntu
   AfterInstall:
-   - location: Scripts/afterInstall.sh
+   - location: codedeploy/afterInstall.sh
      timeout: 180
      runas: ubuntu
   ApplicationStart:
-   - location: Scripts/applicationStart.sh
+   - location: codedeploy/applicationStart.sh
      runas: ubuntu
      timeout: 180
