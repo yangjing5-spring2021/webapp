@@ -28,7 +28,6 @@ jobs:
       run: |
         pwd
         mkdir webapp
-        mkdir codedeploy_artifact
         cd webapp
         cp ../*.json .
         cp ../*.md .
@@ -39,7 +38,8 @@ jobs:
         cp -r ../test .
         cp -r ../.github/workflows .
         cd ..
-        zip -r ${{ env.artifact_name }} webapp appspec.yml codeDeploy
+        mkdir codedeploy_artifact
+        zip -r ${{ env.artifact_name }} webapp appspec.yml codedeploy
         pwd
         ls -al
         mv ${{ env.artifact_name }} codedeploy_artifact/
