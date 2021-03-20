@@ -1,2 +1,2 @@
 #!/bin/bash
-sudo npm i -g pm2
+# sudo npm i -g pm2
