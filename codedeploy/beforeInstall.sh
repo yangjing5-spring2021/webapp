@@ -1,4 +1,4 @@
 #!/bin/bash
 echo "before install"
 pwd
-sudo npm i -g pm2
+sudo npm install forever -g
