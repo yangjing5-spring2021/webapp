@@ -6,4 +6,5 @@ echo "application start"
 # sudo pm2 start /home/ubuntu/webapp/server.js -i 0 --name "web-app"
 cd /home/ubuntu/webapp
 sudo source /etc/profile
-sudo node server.js &
+sudo nohup node server.js &
+echo "app started"
