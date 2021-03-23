@@ -9,7 +9,7 @@ app.use(bodyParser.json());
 
 const userData = require('./routes/userData');
 const booksRoute = require('./routes/books-route');
-app.use('/books', booksRoute);
+app.use('/mybooks', booksRoute);
 
 app.post('/v1/user', express.json(), (req, res) => {
     const newUser = req.body;
