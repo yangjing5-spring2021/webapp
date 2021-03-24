@@ -12,7 +12,6 @@ const AWS = require('aws-sdk');
 AWS.config.update({
     region: 'us-east-1'
 });
-console.log(process.env.bucket_name);
 let s3 = new AWS.S3({
     Bucket: process.env.bucket_name,
      accessKeyId: process.env.access_key_id,
@@ -20,8 +19,14 @@ let s3 = new AWS.S3({
 });
 const multer = require("multer");
 const multerS3 = require("multer-s3");
+const logger = require("../services/logger.js");
+const StatsD = require('node-statsd'),
+client = new StatsD();
 
 router.post('/', function (req, res) {
+    const startAPI = Date.now(); 
+    client.increment('add_book_counter');
+    logger.info("Enter 'create book' API");
     const authorization = req.headers.authorization;
     const { title, author, isbn, published_date } = req.body;
 
@@ -30,6 +35,7 @@ router.post('/', function (req, res) {
             if (title && author && isbn && published_date) {
                     const { v4: uuidv4 } = require('uuid');
                     const uid = uuidv4();
+                    const DBStartTime = new Date.now();
                     models.Book.create({
                         id: uid,
                         title: title,
@@ -40,14 +46,22 @@ router.post('/', function (req, res) {
                         user_id: authResult.userInfo.id,
                         book_images: []
                     }).then((addedBook) => {
+                        const currentTime = Date.now();
+                        client.timing('add_book_DB', currentTime - DBStartTime);
+                        logger.info(addedBook);
+                        const timeTaken = Date.now() - startAPI;
+                        client.timing('add _book_API', timeTaken);
                         res.status(201).json(addedBook);
                     }).catch((err) => {
+                        logger.error("Database server error");
                         res.status(500).json({error : err});
                     });   
             } else {
+                logger.error("Incomplete info");
                 res.status(400).json({error : "Incomplete info"});
             }
         }).catch((err) => {
+            logger.error("Unauthrize error");
             res.status(401).json({error : err});
         })   
 });
@@ -160,8 +174,6 @@ function updateCredentials() {
           accessKeyId: credentials.AccessKeyId,
           secretAccessKey: credentials.SecretAccessKey
         });
-        console.log("s3 in update");
-        console.log(s3);
         return Promise.resolve(s3);
     })
     .catch((err)=>{

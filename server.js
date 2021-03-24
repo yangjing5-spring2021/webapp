@@ -2,6 +2,7 @@
 
 const express = require('express');
 const bodyParser = require('body-parser');
+const logger = require("./services/logger.js");
 
 const app = express();
 const PORT = 3000;
@@ -9,7 +10,7 @@ app.use(bodyParser.json());
 
 const userData = require('./routes/userData');
 const booksRoute = require('./routes/books-route');
-app.use('/mybooks', booksRoute);
+app.use('/books', booksRoute);
 
 app.post('/v1/user', express.json(), (req, res) => {
     const newUser = req.body;
@@ -46,4 +47,4 @@ app.get('/v1/user/self', (req, res) => {
 })
 
 
-app.listen(PORT, () => console.log(`http://localhost:${PORT}`));
+app.listen(PORT, () => logger.info(`http://localhost:${PORT}`));

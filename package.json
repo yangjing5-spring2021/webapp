@@ -16,8 +16,10 @@
     "multiparty": "^4.2.2",
     "mysql": "^2.18.1",
     "mysql2": "^2.2.5",
+    "node-statsd": "^0.1.1",
     "sequelize": "^6.5.0",
-    "uuid": "^8.3.2"
+    "uuid": "^8.3.2",
+    "winston": "^3.3.3"
   },
   "devDependencies": {},
   "scripts": {

@@ -1,12 +1,12 @@
 #!/bin/bash
 echo "application start"
-# crontab -l | { cat; echo "@reboot pm2 start /home/ubuntu/webapp/server.js -i 0 --name \"web-app\""; } | crontab -
-# sudo pm2 stop web-app
-# actually start the server
-# sudo pm2 start /home/ubuntu/webapp/server.js -i 0 --name "web-app"
+sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+    -a fetch-config \
+    -m ec2 \
+    -c file:/home/ubuntu/webapp/cloudwatch-config.json \
+    -s
 cd /home/ubuntu/webapp
-# sudo source /etc/profile
-mv /home/ubuntu/.env /home/ubuntu/webapp/.env
+cp /home/ubuntu/.env /home/ubuntu/webapp/.env
 # sudo nohup node server.js > /dev/null 2> /dev/null < /dev/null &
 sudo forever start server.js
 echo "app started"
