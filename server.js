@@ -2,6 +2,7 @@
 
 const express = require('express');
 const bodyParser = require('body-parser');
+const logger = require("./services/logger.js");
 
 const app = express();
 const PORT = 3000;
