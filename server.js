@@ -2,17 +2,20 @@
 
 const express = require('express');
 const bodyParser = require('body-parser');
-const logger = require("./services/logger.js");
 
 const app = express();
 const PORT = 3000;
 app.use(bodyParser.json());
-
+const logger = require("./services/logger.js");
+const StatsD = require('node-statsd'),
+client = new StatsD();
 const userData = require('./routes/userData');
 const booksRoute = require('./routes/books-route');
 app.use('/books', booksRoute);
 
 app.post('/v1/user', express.json(), (req, res) => {
+    logger.info("Enter 'create user' API");
+    const start = Date.now();
     const newUser = req.body;
     userData.createUser(newUser)
         .then((result) => {
@@ -21,6 +24,8 @@ app.post('/v1/user', express.json(), (req, res) => {
         .catch((errors) => {
             res.status(400).json({ error : errors});
         });
+    client.timing('create_user_API', Date.now() - start);
+    logger.info("Leave 'create user' API");
 }) 
 
 app.put('/v1/user/self', express.json(), (req, res) => {
