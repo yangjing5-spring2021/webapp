@@ -14,8 +14,8 @@ AWS.config.update({
 });
 let s3 = new AWS.S3({
     Bucket: process.env.bucket_name,
-     accessKeyId: process.env.access_key_id,
-     secretAccessKey: process.env.secret_access_key
+    //accessKeyId: process.env.access_key_id,
+    //secretAccessKey: process.env.secret_access_key
 });
 const multer = require("multer");
 const multerS3 = require("multer-s3");
@@ -255,6 +255,8 @@ router.post('/:book_id/image', function (req, res) {
                     })
                 });
             }
+        }).catch((err) => {
+            res.status(401).json({error : err});
         });
 })
 

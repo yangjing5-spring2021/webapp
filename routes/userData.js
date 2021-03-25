@@ -215,12 +215,10 @@ async function authenticateUser(authorization) {
     const password = plaintext.split(':')[1];
 
     const result = { userInfo : {} , auth : false };
-    
     const userInfo = await checkInfo(username)
                         .then((userInfo) => {
                             return userInfo;
                      });
-
     if (!userInfo) {
         return Promise.reject("This user does not exist");
     } 
