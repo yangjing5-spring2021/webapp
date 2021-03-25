@@ -14,18 +14,19 @@ const booksRoute = require('./routes/books-route');
 app.use('/books', booksRoute);
 
 app.post('/v1/user', express.json(), (req, res) => {
-    logger.info("Enter 'create user' API");
+    logger.info("'create user' API input: " + JSON.stringify(req.body));
     const start = Date.now();
     const newUser = req.body;
     userData.createUser(newUser)
         .then((result) => {
+            client.timing('create_user_API', Date.now() - start);
+            logger.info("'create user' API output: " + JSON.stringify(result));
             res.status(201).json(result);
         })
         .catch((errors) => {
+            logger.error(errors);
             res.status(400).json({ error : errors});
         });
-    client.timing('create_user_API', Date.now() - start);
-    logger.info("Leave 'create user' API");
 }) 
 
 app.put('/v1/user/self', express.json(), (req, res) => {

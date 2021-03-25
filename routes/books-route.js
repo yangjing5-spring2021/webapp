@@ -26,16 +26,15 @@ client = new StatsD();
 router.post('/', function (req, res) {
     const startAPI = Date.now(); 
     client.increment('add_book_counter');
-    logger.info("Enter 'create book' API");
+    logger.info("'create book' API input: " + JSON.stringify(req.body));
     const authorization = req.headers.authorization;
     const { title, author, isbn, published_date } = req.body;
-
     userData.authenticateUser(authorization)
         .then((authResult) => {
             if (title && author && isbn && published_date) {
                     const { v4: uuidv4 } = require('uuid');
                     const uid = uuidv4();
-                    const DBStartTime = new Date.now();
+                    const DBStartTime = Date.now();
                     models.Book.create({
                         id: uid,
                         title: title,
@@ -48,20 +47,21 @@ router.post('/', function (req, res) {
                     }).then((addedBook) => {
                         const currentTime = Date.now();
                         client.timing('add_book_DB', currentTime - DBStartTime);
-                        logger.info(addedBook);
+                        logger.info("'crate book' API output: " + JSON.stringify(addedBook));
                         const timeTaken = Date.now() - startAPI;
                         client.timing('add _book_API', timeTaken);
                         res.status(201).json(addedBook);
                     }).catch((err) => {
                         logger.error("Database server error");
+                        logger.error(err);
                         res.status(500).json({error : err});
                     });   
             } else {
-                logger.error("Incomplete info");
+                logger.warn("Incomplete info");
                 res.status(400).json({error : "Incomplete info"});
             }
         }).catch((err) => {
-            logger.error("Unauthrize error");
+            logger.error(JSON.stringify(err));
             res.status(401).json({error : err});
         })   
 });
