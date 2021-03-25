@@ -15,6 +15,7 @@ app.use('/books', booksRoute);
 
 app.post('/v1/user', express.json(), (req, res) => {
     logger.info("'create user' API input: " + JSON.stringify(req.body));
+    client.increment('add_user_counter');
     const start = Date.now();
     const newUser = req.body;
     userData.createUser(newUser)
@@ -30,11 +31,17 @@ app.post('/v1/user', express.json(), (req, res) => {
 }) 
 
 app.put('/v1/user/self', express.json(), (req, res) => {
+    const start = Date.now();
+    client.increment('update_book_counter');
+    logger.info("'update user' API input: " + JSON.stringify(req.body));
+
     const authorization = req.headers.authorization;
     const userUpdate = req.body;
 
     userData.updateUser(authorization, userUpdate)
         .then ( () => {
+            logger.info("'update user' API success");
+            client.timing('update_user_API', Date.now() - start);
             res.status(204).json({ message : "success" });
         }).catch((err) => {
             res.status(400).json({ error: err});
@@ -42,10 +49,16 @@ app.put('/v1/user/self', express.json(), (req, res) => {
 })
 
 app.get('/v1/user/self', (req, res) => {
+    const start = Date.now();
+    client.increment('get_user_counter');
+    logger.info("'get user' API input: " + JSON.stringify(req.body));
+
     const authorization = req.headers.authorization;
     userData.authenticateUser(authorization)
         .then((authResult) => {
                 delete authResult.userInfo.password;
+                logger.info("'get user' API output: " + JSON.stringify(authResult.userInfo));
+                client.timing('get_user_API', Date.now() - start);
                 res.status(200).json(authResult.userInfo);
         }).catch((err) => {
             res.status(400).json({ error: err});
