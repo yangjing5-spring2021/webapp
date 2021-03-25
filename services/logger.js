@@ -7,7 +7,7 @@ const logger = winston.createLogger({
       // - Write all logs with level `debug` and below to `error.log`
       // - Write all logs with level `info` and below to `combined.log`
       // new winston.transports.File({ filename: 'debug.log', level: 'debug' }),
-      new winston.transports.File({ filename: '../logs/app.log' }),
+      new winston.transports.File({ filename: '/home/ubuntu/webapp/logs/app.log' }),
     ],
   });
 
