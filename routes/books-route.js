@@ -14,8 +14,8 @@ AWS.config.update({
 });
 let s3 = new AWS.S3({
     Bucket: process.env.bucket_name,
-    //accessKeyId: process.env.access_key_id,
-    //secretAccessKey: process.env.secret_access_key
+    accessKeyId: process.env.access_key_id,
+    secretAccessKey: process.env.secret_access_key
 });
 const multer = require("multer");
 const multerS3 = require("multer-s3");
@@ -160,23 +160,6 @@ router.get('/', function(req, res) {
         res.status(500).json({error : err});
     }); 
 })
-
-async function deleteS3Image(s3_object_name) {
-    await updateCredentials();
-    const params = {
-        Bucket: process.env.bucket_name,
-        Key: s3_object_name
-    };
-    const startS3 = Date.now();
-    s3.deleteObject(params, function(err, data){
-        if (err) {
-            logger.error("File delete failed with error " + JSON.stringify(err));
-            throw err;
-        }
-        client.timing('delete_image_S3', Date.now() - startS3);
-        logger.info("File deleted successfully");
-    });
-}
   
 const fileFilter = (req, file, cb) => {
     if (file.mimetype === "image/jpeg" || file.mimetype === "image/jpg" || file.mimetype === "image/png") {
@@ -300,7 +283,8 @@ router.delete('/:book_id/image/:image_id', function(req, res) {
                                             // delete succesfully
                                             res.status(204).json({});
                                         } 
-                                    }).catch(() => {
+                                    }).catch((err) => {
+                                        logger.error("error:" + JSON.stringify(err));
                                         res.status(404).json({});
                                     })                               
                         }).catch((err) => {
@@ -380,6 +364,24 @@ async function deleteBookImages(book_id, image_id) {
         client.timing('save_book_DB_delete_image', Date.now() - startDBsave);
         return Promise.resolve("success");
     })
+}
+
+
+async function deleteS3Image(s3_object_name) {
+    //await updateCredentials();
+    const params = {
+        Bucket: process.env.bucket_name,
+        Key: s3_object_name
+    };
+    const startS3 = Date.now();
+    s3.deleteObject(params, function(err, data){
+        if (err) {
+            logger.error("File delete failed with error " + JSON.stringify(err));
+            throw err;
+        }
+        client.timing('delete_image_S3', Date.now() - startS3);
+        logger.info("File deleted successfully");
+    });
 }
 
 module.exports = router;
