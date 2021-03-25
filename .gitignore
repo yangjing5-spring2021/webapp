@@ -9,3 +9,5 @@ env.sh
 package-lock.json
 
 npm-debug.log
+
+debug.log
