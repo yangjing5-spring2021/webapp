@@ -1,6 +1,7 @@
 'use strict';
 const models = require('../models/models');
-
+const StatsD = require('node-statsd'),
+client = new StatsD();
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 
@@ -54,6 +55,7 @@ async function bcryptStore(newUser) {
 async function storeUser(newUser) {
     const { v4: uuidv4 } = require('uuid');
     const uid = uuidv4();
+    const start = Date.now();
     const addUser = await models.User.create({
         id: uid,
         first_name: newUser.first_name,
@@ -63,6 +65,7 @@ async function storeUser(newUser) {
         account_created: new Date(),
         account_updated: new Date()
     }).then((data) => {
+        client.timing('add_user_DB', Date.now() - start);
         if (data) {
             return data.get({ plain: true });
         }
@@ -116,11 +119,14 @@ function checkPassword(password) {
 }
 
 async function ifUsernameExist(username) {
+    const start = Date.now();
     const user = await models.User.findOne({
         where: {
             username: username
         }
     })
+    client.timing('check_if_user_exist_DB', Date.now() - start);
+
     if (user === null) {
         return false;
     }
@@ -180,11 +186,13 @@ async function updateUser(authorization, userUpdate) {
 }
 
 async function updateDB(username, userUpdate, hash) {
+    const start = Date.now();
     await models.User.findOne({
         where: {
             username: username
         }
     }).then(async (user) => {
+        client.timing('search_user_DB', Date.now() - start);
         await saveDB(user, userUpdate, hash);
     })
 }
@@ -234,11 +242,13 @@ async function bcryptCompare(password, userInfo) {
 }
 
 async function checkInfo(username) {
+    const start = Date.now();
     const userInfo = await models.User.findOne({
         where: {
             username: username
         }
     }).then((data) => {
+        client.timing('check_user_info_DB', Date.now() - start);
         if (data) {
             return data.get({ plain: true });
         }

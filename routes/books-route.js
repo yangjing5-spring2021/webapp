@@ -67,17 +67,26 @@ router.post('/', function (req, res) {
 });
 
 router.get('/:id', function(req, res) {
+    const start = Date.now();
+    client.increment('get_book_counter');
+    logger.info("'get book' API input: " + JSON.stringify(req.body));
+
     const bookId = req.params.id;
+    const startDB = Date.now();
     models.Book.findOne({
         where: {
             id: bookId
         }
     }).then((data) => {
+        client.timing('search_book_DB', Date.now() - startDB);
+
         if (data) {
             data = data.get({ plain: true });
+            logger.info("get_book_API output: " + JSON.stringify(data));
+            client.timing('get_book_API', Date.now() - start);
             res.status(200).json(data);
         } else {
-            res.status(200).json(data);
+            res.status(400).json({Message: "no this book"});
         }
     }).catch((err) => {
         res.status(500).json({error : err});
@@ -85,25 +94,37 @@ router.get('/:id', function(req, res) {
 })
 
 router.delete('/:id', function(req, res) {
+    const start = Date.now();
+    client.increment('delete_book_counter');
+    logger.info("'delete book' API input: " + JSON.stringify(req.body));
+
     const authorization = req.headers.authorization;
     const bookId = req.params.id;
     userData.authenticateUser(authorization)
         .then((authResult) => {
             const userId = authResult.userInfo.id;
+            const startDB = Date.now();
             models.Book.findOne({
                 where: {
                     id: bookId
                 }
             }).then((data) => {
+                client.timing('search_book_DB_when_delete', Date.now() - startDB);
+
                 if (data) {
                     data = data.get({ plain: true });
                     if (data.user_id === userId) {
+                        const startDestroy = Date.now();
                         models.Book.destroy({
                             where: {
                                 id: bookId
                             }
                         }).then((data) => {
+                            client.timing('delete_book_DB', Date.now() - startDestroy);
+
                             if (data) {
+                                logger.info("delete_book_API output: " + JSON.stringify(data));
+                                client.timing('delete_book_API', Date.now() - start);
                                 res.status(204).json({});
                             } 
                         }).catch((err) => {
@@ -124,76 +145,36 @@ router.delete('/:id', function(req, res) {
 })
 
 router.get('/', function(req, res) {
+    const start = Date.now();
+    client.increment('get_all_books_counter');
+    logger.info("'get all books' API input: " + JSON.stringify(req.body));
+
+    const startDB = Date.now();
     models.Book.findAll({})
     .then((data) => {
+        client.timing('search_all_books_DB', Date.now() - startDB);
+        logger.info("get_all_books_API output: " + JSON.stringify(data));
+        client.timing('get_all_books_API', Date.now() - start);
         res.status(200).json(data);
     }).catch((err) => {
         res.status(500).json({error : err});
     }); 
 })
 
-function getEC2Rolename(){
-    const promise = new Promise((resolve,reject)=>{
-        const metadata = new AWS.MetadataService();
-        metadata.request('/latest/meta-data/iam/security-credentials/',function(err,rolename){
-            if(err) reject(err);
-            resolve(rolename);
-        });
-    });
-    return promise;
-};
-
-function getEC2Credentials(rolename){
-    const promise = new Promise((resolve,reject)=>{
-        const metadata = new AWS.MetadataService();
-        metadata.request('/latest/meta-data/iam/security-credentials/'+rolename,function(err,data){
-            if(err) reject(err);
-            resolve(JSON.parse(data));
-        });
-    });
-    return promise;
-};
-  
-function updateCredentials() {
-    getEC2Rolename()
-    .then((rolename)=>{
-        return getEC2Credentials(rolename)
-    })
-    .then((credentials)=>{
-        // AWS.config.accessKeyId=credentials.AccessKeyId;
-        // AWS.config.secretAccessKey=credentials.SecretAccessKey;
-        // AWS.config.sessionToken = credentials.Token;
-        
-        /*AWS.config.update({
-            accessKeyId: credentials.AccessKeyId,
-            secretAccessKey: credentials.SecretAccessKey,
-            sessionToken: credentials.Token
-        });*/
-        s3 = new AWS.S3({
-          Bucket: process.env.bucket_name,
-          accessKeyId: credentials.AccessKeyId,
-          secretAccessKey: credentials.SecretAccessKey
-        });
-        return Promise.resolve(s3);
-    })
-    .catch((err)=>{
-        console.log(err);
-    });
-}
-  
 async function deleteS3Image(s3_object_name) {
     await updateCredentials();
     const params = {
         Bucket: process.env.bucket_name,
         Key: s3_object_name
     };
-    
+    const startS3 = Date.now();
     s3.deleteObject(params, function(err, data){
         if (err) {
-            console.log("File delete failed with error " + err);
+            logger.error("File delete failed with error " + JSON.stringify(err));
             throw err;
         }
-        console.log("File deleted successfully");
+        client.timing('delete_image_S3', Date.now() - startS3);
+        logger.info("File deleted successfully");
     });
 }
   
@@ -212,7 +193,7 @@ const upload = multer({
         s3: s3,
         bucket: process.env.bucket_name,
         metadata: function (req, file, cb) {
-            console.log("file metadata: " + JSON.stringify(file));
+            //console.log("file metadata: " + JSON.stringify(file));
             cb(null, { fieldName: file.fieldname });
         },
         key: function (req, file, cb) {
@@ -222,26 +203,28 @@ const upload = multer({
             req.file_id = file_id;
             req.file_name = file.originalname;
             req.s3_object_name = image_id + "/" + file_id + "/" + file.originalname;
-            console.log("s3 in multer: ");
-            console.log(s3);
+            //console.log("s3 in multer: ");
+            //console.log(s3);
             cb(null, req.s3_object_name);
         },
     }),
 });
 
 router.post('/:book_id/image', function (req, res) {
+    const start = Date.now();
+    client.increment('add_image_counter');
+    logger.info("'add image' API input: " + JSON.stringify(req.body));
+
     const authorization = req.headers.authorization;
     const book_id = req.params.book_id;
     const image_string = req.body;
     userData.authenticateUser(authorization)
         .then((authResult) => {
-            console.log("authresult");
             if (image_string) {
                 const singleUpload = upload.single("image");
-                console.log("singleUpload start");
+                const s3Start = Date.now();
                 singleUpload(req, res, async function (err) {
                     if (err) {
-                        console.log("singleUpload error: " + err.message);
                         return res.status(500).json({
                             success: false,
                             errors: {
@@ -251,6 +234,8 @@ router.post('/:book_id/image', function (req, res) {
                             },
                         });
                     }
+                    client.timing('upload_image_S3', Date.now() - s3Start);
+                    const startDB = Date.now();
                     models.File.create({
                         file_name: req.file_name,
                         s3_object_name: req.s3_object_name,
@@ -258,7 +243,12 @@ router.post('/:book_id/image', function (req, res) {
                         created_date: new Date(),
                         user_id: authResult.userInfo.id,
                     }).then(async (addedFile) => {
-                        await updateBookImages(book_id, addedFile)
+                        client.timing('add_image_DB', Date.now() - startDB);
+
+                        await updateBookImages(book_id, addedFile);
+
+                        logger.info("add_image_API output: " + JSON.stringify(addedFile));
+                        client.timing('add_image_API', Date.now() - start);
                         res.status(201).json(addedFile);
                     }).catch((err) => {
                         res.status(500).json({error : err});
@@ -269,30 +259,42 @@ router.post('/:book_id/image', function (req, res) {
 })
 
 router.delete('/:book_id/image/:image_id', function(req, res) {
+    const start = Date.now();
+    client.increment('delete_image_counter');
+    logger.info("'delete image' API input: " + JSON.stringify(req.body));
+
     const authorization = req.headers.authorization;
     const book_id = req.params.book_id;
     const image_id = req.params.image_id;
     userData.authenticateUser(authorization)
         .then((authResult) => {
             const userId = authResult.userInfo.id;
+            const startDB = Date.now();
             models.File.findOne({
                 where: {
                     file_id: image_id
                 }
             }).then((data) => {
+                client.timing('search_image_DB', Date.now() - startDB);
+
                 if (data) {
                     data = data.get({ plain: true });
                     const deleted_s3_object_name = data.s3_object_name;
                     if (data.user_id === userId) {
+                        const startDeleteDB = Date.now();
                         models.File.destroy({
                             where: {
                                 file_id: image_id
                             }
                         }).then((data) => {
+                            client.timing('delete_image_DB', Date.now() - startDeleteDB);
+
                             deleteBookImages(book_id, image_id)
                                     .then(async () => {
                                         if (data) {
                                             await deleteS3Image(deleted_s3_object_name);
+                                            logger.info("delete_image_API success");
+                                            client.timing('delete_image_API', Date.now() - start);
                                             // delete succesfully
                                             res.status(204).json({});
                                         } 
@@ -317,11 +319,13 @@ router.delete('/:book_id/image/:image_id', function(req, res) {
 })
 
 async function updateBookImages(book_id, file) {
+    const startDB = Date.now();
     await models.Book.findOne({
         where: {
             id: book_id
         }
     }).then(async (book) => {
+        client.timing('search_book_DB_update_image', Date.now() - startDB);
         await saveBookImages(book, file);
     })
 }
@@ -334,17 +338,22 @@ async function saveBookImages(book, file) {
         images = [file];
     }
     book.book_images = images;
+    const startDB = Date.now();
     await book.save().then (() => {
+        client.timing('add_image_DB', Date.now() - startDB);
         return Promise.resolve("Updated");
     });
 }
 
 async function deleteBookImages(book_id, image_id) {
+    const startDB = Date.now();
     await models.Book.findOne({
         where: {
             id: book_id
         }
     }).then(async (book) => {
+        client.timing('search_book_DB_delete_image', Date.now() - startDB);
+
         //await saveBookImages(book, file);
         const images = book.book_images;
         if (images) {
@@ -364,7 +373,9 @@ async function deleteBookImages(book_id, image_id) {
             return Promise.reject("There is no such image");
         }
         book.book_images = images;
+        const startDBsave = Date.now();
         await book.save();
+        client.timing('save_book_DB_delete_image', Date.now() - startDBsave);
         return Promise.resolve("success");
     })
 }
