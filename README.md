@@ -19,4 +19,4 @@ The database for this project is Mysql. You need to install and start MySQL, cre
 ### Test the project:
 run `$ npm run test`
 
-a7-1
+a7-2
