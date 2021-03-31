@@ -13,6 +13,10 @@ const userData = require('./routes/userData');
 const booksRoute = require('./routes/books-route');
 app.use('/books', booksRoute);
 
+app.get('/', (req, res) => {
+    res.status(200).json({});
+})
+
 app.post('/v1/user', express.json(), (req, res) => {
     logger.info("'create user' API input: " + JSON.stringify(req.body));
     client.increment('add_user_counter');
