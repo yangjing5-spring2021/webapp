@@ -157,7 +157,7 @@ router.delete('/:id', function(req, res) {
                             client.timing('delete_book_DB', Date.now() - startDestroy);
 
                             if (data) {
-                                const message = `This email is to confirm that book: ${message.bookId} has been successfully
+                                const message = `This email is to confirm that book: ${bookId} has been successfully
                                 deleted for user ${username}.`
                                 const params = {
                                     Message: message, /* required */
