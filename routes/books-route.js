@@ -160,9 +160,15 @@ router.delete('/:id', function(req, res) {
                                 const message = `This email is to confirm that book: ${message.bookId} has been successfully
                                 deleted for user ${username}.`
                                 const params = {
-                                    Message: message/* required */
-                                    //TopicArn: 'TOPIC_ARN'
-                                  };
+                                    Message: message, /* required */
+                                    MessageAttributes: {
+                                        'username': {
+                                          DataType: 'String',
+                                          StringValue: `${username}`
+                                        }
+                                    },
+                                    TopicArn: 'arn:aws:sns:us-east-1:494578692710:book-topic'
+                                };
                                 const publishTextPromise = new AWS.SNS({apiVersion: '2010-03-31'}).publish(params).promise();
         
                                 publishTextPromise.then(
