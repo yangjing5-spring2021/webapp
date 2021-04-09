@@ -10,12 +10,12 @@ environment.config();
 
 const AWS = require('aws-sdk');
 AWS.config.update({
-    region: 'us-east-1'
+    region: 'us-east-1',
+    //accessKeyId: process.env.access_key_id,
+    //secretAccessKey: process.env.secret_access_key
 });
 let s3 = new AWS.S3({
-    Bucket: process.env.bucket_name,
-    accessKeyId: process.env.access_key_id,
-    secretAccessKey: process.env.secret_access_key
+    Bucket: process.env.bucket_name
 });
 const multer = require("multer");
 const multerS3 = require("multer-s3");
@@ -27,7 +27,12 @@ router.post('/', function (req, res) {
     const startAPI = Date.now(); 
     client.increment('add_book_counter');
     logger.info("'create book' API input: " + JSON.stringify(req.body));
+
     const authorization = req.headers.authorization;
+    const userPass = authorization.split(' ')[1];
+    const plaintext = Buffer.from(userPass, 'base64').toString('ascii');
+    const username = plaintext.split(':')[0];
+
     const { title, author, isbn, published_date } = req.body;
     userData.authenticateUser(authorization)
         .then((authResult) => {
@@ -47,10 +52,35 @@ router.post('/', function (req, res) {
                     }).then((addedBook) => {
                         const currentTime = Date.now();
                         client.timing('add_book_DB', currentTime - DBStartTime);
-                        logger.info("'crate book' API output: " + JSON.stringify(addedBook));
-                        const timeTaken = Date.now() - startAPI;
-                        client.timing('add _book_API', timeTaken);
-                        res.status(201).json(addedBook);
+                        
+                        const message = `This email is to confirm that book: ${addedBook.id} has been successfully created for user ${username}. `
+                                    + `Click this link to check the book you created: http://prod.jingyang.me/books/${addedBook.id}. `
+                                    + "To unsubscribe, please contact jing.yang.jane.5@gmail.com.";
+                        const params = {
+                            Message: message,
+                            MessageAttributes: {
+                                'username': {
+                                  DataType: 'String',
+                                  StringValue: `${username}`
+                                }
+                            },
+                            TopicArn: 'arn:aws:sns:us-east-1:494578692710:book-topic'
+                          };
+                        const publishTextPromise = new AWS.SNS({apiVersion: '2010-03-31'}).publish(params).promise();
+
+                        publishTextPromise.then(
+                            function(data) {
+                              logger.info("'crate book' API output: " + JSON.stringify(addedBook));
+                              //logger.info(`Message ${params.Message} sent to the topic ${params.TopicArn}`);
+                              logger.info("MessageID is " + data.MessageId);
+                              const timeTaken = Date.now() - startAPI;
+                              client.timing('add _book_API', timeTaken);
+                              res.status(201).json(addedBook);
+                            }).catch(
+                              function(err) {
+                              logger.error(err, err.stack);
+                              res.status(500).json({error : err});
+                            });
                     }).catch((err) => {
                         logger.error("Database server error");
                         logger.error(err);
@@ -99,6 +129,10 @@ router.delete('/:id', function(req, res) {
     logger.info("'delete book' API input: " + JSON.stringify(req.body));
 
     const authorization = req.headers.authorization;
+    const userPass = authorization.split(' ')[1];
+    const plaintext = Buffer.from(userPass, 'base64').toString('ascii');
+    const username = plaintext.split(':')[0];
+    
     const bookId = req.params.id;
     userData.authenticateUser(authorization)
         .then((authResult) => {
@@ -123,9 +157,26 @@ router.delete('/:id', function(req, res) {
                             client.timing('delete_book_DB', Date.now() - startDestroy);
 
                             if (data) {
-                                logger.info("delete_book_API output: " + JSON.stringify(data));
-                                client.timing('delete_book_API', Date.now() - start);
-                                res.status(204).json({});
+                                const message = `This email is to confirm that book: ${message.bookId} has been successfully
+                                deleted for user ${username}.`
+                                const params = {
+                                    Message: message/* required */
+                                    //TopicArn: 'TOPIC_ARN'
+                                  };
+                                const publishTextPromise = new AWS.SNS({apiVersion: '2010-03-31'}).publish(params).promise();
+        
+                                publishTextPromise.then(
+                                    function(SNSdata) {
+                                      logger.info("delete_book_API output: " + JSON.stringify(data));
+                                      //logger.info(`Message ${params.Message} sent to the topic ${params.TopicArn}`);
+                                      logger.info("MessageID is " + SNSdata.MessageId);
+                                      client.timing('delete_book_API', Date.now() - start);
+                                      res.status(204).json({});
+                                    }).catch(
+                                      function(err) {
+                                      logger.error(err, err.stack);
+                                      res.status(500).json({error : err});
+                                    });
                             } 
                         }).catch((err) => {
                             res.status(500).json({error : err});
